@@ -6,9 +6,11 @@ This Python application allows you to dynamically execute functions with their p
 
 - Dynamically loads functions with their parameters.
 - Automatically creates input fields for function parameters based on their types.
-- Supports both primitive types (int, str, float, bool) and custom class types.
+- Supports both primitive types (`int`, `str`, `float`, `bool`) and custom class types.
 - Displays the function result in the GUI.
 - Nested class handling: Class parameters are recursively handled to allow user input for nested classes.
+- Handles primitive data types (like `int`, `str`, `float`, and `bool`) by displaying their names.
+- Automatically displays tooltips with descriptions for non-primitive class instances.
 
 ## Installation
 

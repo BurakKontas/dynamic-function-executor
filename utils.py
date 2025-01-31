@@ -59,6 +59,10 @@ def print_function_parameters(funk: Callable) -> None:
 def get_all_functions(functions_folder='functions'):
     all_functions = []
 
+    if not os.path.exists(functions_folder):
+        print(f"Folder {functions_folder} does not exist.")
+        return all_functions
+
     for filename in os.listdir(functions_folder):
         if filename.endswith('.py'):
             module_name = filename[:-3]

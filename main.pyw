@@ -6,7 +6,7 @@ from utils import get_all_functions
 
 
 if __name__ == "__main__":
-    functions = get_all_functions()
+    functions = get_all_functions("examples")
     app = QApplication(sys.argv)
     window = DynamicFunctionUI(functions=functions)
     window.show()

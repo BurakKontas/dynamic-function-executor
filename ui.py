@@ -53,6 +53,7 @@ class DynamicFunctionUI(QWidget):
     def __init__(self, functions):
         super().__init__()
         self.functions = functions
+        #eğer functions yok ise ekrana fonksiyon bulunamadı yazdır ve refresh butonu ekle
         self.initUI()
     
     def initUI(self):

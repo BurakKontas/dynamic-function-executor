@@ -96,6 +96,10 @@ def convert_to_class_instance(cls, data):
                 item_type = get_args(field_type)[0]
                 if inspect.isclass(item_type) and isinstance(data[field], list):
                     kwargs[field] = [convert_to_class_instance(item_type, item) for item in data[field]]
+            elif get_origin(field_type) == tuple:
+                item_types = get_args(field_type)
+                if all(inspect.isclass(item_type) for item_type in item_types) and isinstance(data[field], tuple):
+                    kwargs[field] = tuple(convert_to_class_instance(item_type, item) for item_type, item in zip(item_types, data[field]))
             else:
                 kwargs[field] = data[field]
     

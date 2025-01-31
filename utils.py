@@ -4,6 +4,7 @@ from typing import Callable, get_type_hints
 from inspect import signature, isclass, isfunction
 import os
 import importlib
+import sys
 
 PRIMAL_TYPES = {int, str, float, bool, list, dict, tuple, set}
 
@@ -59,21 +60,39 @@ def print_function_parameters(funk: Callable) -> None:
 def get_all_functions(functions_folder='functions'):
     all_functions = []
 
+    # Eğer tam bir yol verilmişse, dizini sys.path'a ekle
     if not os.path.exists(functions_folder):
         print(f"Folder {functions_folder} does not exist.")
         return all_functions
 
-    for filename in os.listdir(functions_folder):
+    # Eğer 'functions_folder' bir tam dosya yolu ise, uygun şekilde işle
+    if os.path.isdir(functions_folder):
+        folder_path = functions_folder
+    else:
+        print(f"{functions_folder} is not a valid directory.")
+        return all_functions
+
+    sys.path.append(folder_path)
+
+    for filename in os.listdir(folder_path):
         if filename.endswith('.py'):
             module_name = filename[:-3]
 
-            module = importlib.import_module(f'{functions_folder}.{module_name}')
+            if module_name in sys.modules:
+                del sys.modules[module_name]
+                print(f"Cleared cache for module: {module_name}")
 
-            if hasattr(module, module_name):
-                func = getattr(module, module_name)
-                if isfunction(func):
-                    all_functions.append(func)
-                    print(f"Found function: {module_name} in module {module_name}")
+            try:
+                module = importlib.import_module(module_name)
+                importlib.reload(module)
+
+                if hasattr(module, module_name):
+                    func = getattr(module, module_name)
+                    if isfunction(func):
+                        all_functions.append(func)
+                        print(f"Found function: {module_name} in module {module_name}")
+            except Exception as e:
+                print(f"Error importing module {module_name}: {e}")
 
     return all_functions
 
@@ -108,3 +127,11 @@ def convert_to_class_instance(cls, data):
                 kwargs[field] = data[field]
     
     return cls(**kwargs)
+
+def convert_to_serializable(obj):
+    if isinstance(obj, (dict, list, tuple, set)):
+        return type(obj)(convert_to_serializable(item) for item in obj)
+    elif hasattr(obj, 'to_dict'):
+        return obj.to_dict()
+    else:
+        return obj

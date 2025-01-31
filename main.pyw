@@ -1,13 +1,9 @@
 import sys
 from PyQt6.QtWidgets import (QApplication)
-from ui import DynamicFunctionUI
-from utils import get_all_functions
-
-
+from ui import MainWindow
 
 if __name__ == "__main__":
-    functions = get_all_functions("examples")
     app = QApplication(sys.argv)
-    window = DynamicFunctionUI(functions=functions)
+    window = MainWindow()
     window.show()
     sys.exit(app.exec())

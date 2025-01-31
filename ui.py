@@ -1,31 +1,30 @@
 import inspect
+import json
+from settings import SettingsWindow
+from utils import convert_to_serializable, get_all_functions, print
+
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QTabWidget, QFormLayout, QLineEdit, QTextEdit, QPushButton, QLabel, QToolTip
+    QWidget, QVBoxLayout, QTabWidget, QFormLayout, QLineEdit, QTextEdit, QPushButton, QLabel, QToolTip, QMainWindow
 )
 from utils import constructor_parameter_analyzer, convert_to_class_instance, print
 from PyQt6.QtGui import QFont, QCursor
-import json
-from utils import print
-
-
-from PyQt6.QtCore import Qt, QRect
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtWidgets import QFileDialog, QHBoxLayout
+from PyQt6.QtGui import QAction
 
 class HoverLabel(QLabel):
     def __init__(self, text, tooltip):
         super().__init__(text)
         self.setToolTip(tooltip)
         self.tooltip = tooltip
-        self.setMouseTracking(True)  # Fare hareketlerini izle
+        self.setMouseTracking(True)
     
     def enterEvent(self, event):
-        # Tooltip metnini belirli bir genişlikle sınırla
         font_metrics = QFontMetrics(self.font())
-        max_width = 400  # Tooltip'in maksimum genişliği
+        max_width = 400
         wrapped_text = self.wrap_text(self.tooltip, font_metrics, max_width)
         
-        # Tooltip'i fare pozisyonuna göre göster
         QToolTip.showText(QCursor.pos(), wrapped_text, self)
     
     def leaveEvent(self, event):
@@ -53,7 +52,6 @@ class DynamicFunctionUI(QWidget):
     def __init__(self, functions):
         super().__init__()
         self.functions = functions
-        #eğer functions yok ise ekrana fonksiyon bulunamadı yazdır ve refresh butonu ekle
         self.initUI()
     
     def initUI(self):
@@ -108,6 +106,7 @@ class DynamicFunctionUI(QWidget):
 
         run_button = QPushButton("Run")
         result_label = QLabel("Result: ")
+        result_label.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         run_button.clicked.connect(lambda: self.run_function(func, param_inputs, result_label))
 
@@ -145,10 +144,52 @@ class DynamicFunctionUI(QWidget):
                         result_label.setText("Error: Invalid input type")
                         return
                 params[param_name] = value
-
         try:
             result = func(**params)
-            result_label.setText(f"Result: {result}")
+            result = convert_to_serializable(result)
+
+            if isinstance(result, (dict, list, tuple, set)):
+                formatted_result = json.dumps(result, indent=4, ensure_ascii=False)
+            elif isinstance(result, str):
+                formatted_result = result
+            else:
+                formatted_result = str(result)
+
+            result_label.setText(f"<pre><strong>{formatted_result}</strong></pre>")
+
         except Exception as e:
             result_label.setText(f"Error: {str(e)}")
             print(e.with_traceback())
+
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Dynamic Function Executor")
+        self.setGeometry(100, 100, 800, 600)
+        self.refresh_functions()
+
+        menu_bar = self.menuBar()
+        settings_menu = menu_bar.addMenu("Settings")
+        settings_menu.aboutToShow.connect(self.open_settings_window)
+        settings_menu.aboutToHide.connect(self.refresh_functions)
+
+        refresh_menu = menu_bar.addMenu("Refresh")
+        refresh_menu.aboutToShow.connect(self.refresh_functions)
+
+    def open_settings_window(self):
+        self.second_window = SettingsWindow(self)
+        self.second_window.show()
+        self.second_window.move(self.x() + self.width() // 2 - self.second_window.width() // 2,
+                                self.y() + self.height() // 2 - self.second_window.height() // 2)
+        
+    def refresh_functions(self):
+        try:
+            with open("settings.json", "r") as file:
+                settings = json.load(file)
+                functions_path = settings.get("functions_path", "examples")
+        except FileNotFoundError:
+            functions_path = "examples"
+
+        self.central_widget = DynamicFunctionUI(get_all_functions(functions_path))
+        self.setCentralWidget(self.central_widget)

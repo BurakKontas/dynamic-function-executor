@@ -1,4 +1,4 @@
-from utils import print
+import json
 
 class Adres:
     sehir: str
@@ -10,6 +10,12 @@ class Adres:
         self.ulke = ulke
         self.posta_kodu = posta_kodu
 
+    def to_dict(self):
+        return self.__dict__
+
+    def __repr__(self):
+        return json.dumps(self.to_dict(), indent=4, ensure_ascii=False)
+
 class Kisi:
     isim: str
     yas: int
@@ -19,6 +25,16 @@ class Kisi:
         self.isim = isim
         self.yas = yas
         self.adres = adres
+
+    def to_dict(self):
+        return {
+            "isim": self.isim,
+            "yas": self.yas,
+            "adres": self.adres.to_dict()
+        }
+
+    def __repr__(self):
+        return json.dumps(self.to_dict(), indent=4, ensure_ascii=False)
 
 class Sirket:
     sirket_adi: str
@@ -30,6 +46,16 @@ class Sirket:
         self.calisanlar = calisanlar
         self.merkez = merkez
 
+    def to_dict(self):
+        return {
+            "sirket_adi": self.sirket_adi,
+            "calisanlar": [kisi.to_dict() for kisi in self.calisanlar],
+            "merkez": self.merkez.to_dict()
+        }
+
+    def __repr__(self):
+        return json.dumps(self.to_dict(), indent=4, ensure_ascii=False)
+
 class Urun:
     urun_adi: str
     fiyat: float
@@ -39,6 +65,16 @@ class Urun:
         self.urun_adi = urun_adi
         self.fiyat = fiyat
         self.uretici = uretici
+
+    def to_dict(self):
+        return {
+            "urun_adi": self.urun_adi,
+            "fiyat": self.fiyat,
+            "uretici": self.uretici.to_dict()
+        }
+
+    def __repr__(self):
+        return json.dumps(self.to_dict(), indent=4, ensure_ascii=False)
 
 class Siparis:
     siparis_no: int
@@ -52,9 +88,16 @@ class Siparis:
         self.urunler = urunler
         self.toplam_tutar = toplam_tutar
 
-def siparis_isle(siparis: Siparis, odendi: bool) -> None:
-    print(siparis)
-    print(type(siparis.musteri))
-    print(type(siparis.urunler[0]))
-    print(type(siparis.urunler[0].uretici))
-    print(f"Sipariş No: {siparis.siparis_no}, Ödendi: {odendi}")
+    def to_dict(self):
+        return {
+            "siparis_no": self.siparis_no,
+            "musteri": self.musteri.to_dict(),
+            "urunler": [urun.to_dict() for urun in self.urunler],
+            "toplam_tutar": self.toplam_tutar
+        }
+
+    def __repr__(self):
+        return json.dumps(self.to_dict(), indent=4, ensure_ascii=False)
+
+def siparis_isle(siparis: Siparis, odendi: bool):
+    return siparis, odendi

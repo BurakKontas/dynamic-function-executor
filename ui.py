@@ -32,13 +32,11 @@ class HoverLabel(QLabel):
         QToolTip.hideText()
     
     def wrap_text(self, text, font_metrics, max_width):
-        """Metni belirli bir genişliğe göre satır sonlarına böler."""
         words = text.split()
         wrapped_lines = []
         current_line = ""
 
         for word in words:
-            # Mevcut satıra kelimeyi ekleyip eklemeyeceğimizi kontrol et
             if font_metrics.horizontalAdvance(current_line + word) <= max_width:
                 current_line += word + " "
             else:
@@ -50,8 +48,6 @@ class HoverLabel(QLabel):
         
         return "\n".join(wrapped_lines)
 
-
-from PyQt6.QtWidgets import QHBoxLayout  # Yatay düzen için eklendi
 
 class DynamicFunctionUI(QWidget):
     def __init__(self, functions):
@@ -82,38 +78,31 @@ class DynamicFunctionUI(QWidget):
             input_field = None
             param_type = param.annotation
 
-            # Eğer parametre tipi str ve adında "file_path" geçiyorsa, dosya seçme butonu ekle
             if param_type == str and "file_path" in param_name.lower():
                 input_field = QLineEdit()
                 file_button = QPushButton("Dosya Seç")
                 file_button.clicked.connect(lambda _, field=input_field: self.select_file(field))
                 
-                # Yatay düzen oluştur ve input alanı ile butonu yan yana yerleştir
                 hbox = QHBoxLayout()
                 hbox.addWidget(input_field)
                 hbox.addWidget(file_button)
                 
-                # Etiketi ve yatay düzeni forma ekle
                 label = HoverLabel(f"{param_name} ({param.annotation.__name__ if param.annotation != param.empty else 'Any'})", '')
                 form_layout.addRow(label, hbox)
             else:
-                # Diğer parametreler için standart input alanı ekle
                 if param_type in [dict, list, tuple, set] or (hasattr(param_type, '__name__') and param_type not in {int, str, float, bool}):
                     input_field = QTextEdit()
                     input_field.setFixedHeight(80)
                 else:
                     input_field = QLineEdit()
                 
-                # Etiket ve input alanını forma ekle
                 label = HoverLabel(f"{param_name} ({param.annotation.__name__ if param.annotation != param.empty else 'Any'})", '')
                 form_layout.addRow(label, input_field)
 
-            # Tooltip'i ayarla (eğer parametre tipi bir sınıfsa)
             if param_type is not None and hasattr(param_type, '__name__') and param_type not in {int, str, float, bool}:
                 tooltip = constructor_parameter_analyzer(param_type)
                 label.tooltip = f"{param_name}: {tooltip}"
 
-            # Input alanını parametreler sözlüğüne ekle
             param_inputs[param_name] = input_field
 
         run_button = QPushButton("Run")
@@ -128,8 +117,7 @@ class DynamicFunctionUI(QWidget):
         self.tabs.addTab(tab, func.__name__)
 
     def select_file(self, input_field):
-        """Dosya seçme diyaloğunu açar ve seçilen dosya yolunu input alanına yazar."""
-        file_path, _ = QFileDialog.getOpenFileName(self, "Dosya Seç", "", "All Files (*)")
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select File", "", "All Files (*)")
         if file_path:
             input_field.setText(file_path)
     
@@ -140,10 +128,9 @@ class DynamicFunctionUI(QWidget):
         for param_name, param in sig.parameters.items():
             value = param_inputs[param_name].toPlainText() if isinstance(param_inputs[param_name], QTextEdit) else param_inputs[param_name].text()
 
-            # Eğer parametre tipi bir sınıfsa, örneklendir
             if hasattr(param.annotation, '__name__') and param.annotation not in {int, str, float, bool}:
                 try:
-                    param_value = convert_to_class_instance(param.annotation, json.loads(value))  # JSON'dan sözlüğe dönüştür
+                    param_value = convert_to_class_instance(param.annotation, json.loads(value))
                     params[param_name] = param_value
                 except Exception as e:
                     result_label.setText(f"Error: Failed to convert parameter '{param_name}' to {param.annotation.__name__}")

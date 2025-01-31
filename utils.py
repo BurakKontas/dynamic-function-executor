@@ -8,7 +8,6 @@ import importlib
 PRIMAL_TYPES = {int, str, float, bool, list, dict, tuple, set}
 
 def constructor_parameter_analyzer(cls, level=1):
-    """Analyzes the constructor (__init__) parameters of a class and checks nested classes as well."""
     ctor_sign = signature(cls.__init__)
     type_hints = get_type_hints(cls.__init__)
 
@@ -43,7 +42,6 @@ def constructor_parameter_analyzer(cls, level=1):
 
 
 def print_function_parameters(funk: Callable) -> None:
-    """Prints the parameters of a function and the constructor parameters of any nested classes."""
     sign = signature(funk)
     type_hints = get_type_hints(funk)
 
@@ -87,24 +85,18 @@ import inspect
 from typing import get_origin, get_args
 
 def convert_to_class_instance(cls, data):
-    # Sınıfın __annotations__ özelliğini kullanarak alanları ve tiplerini al
     annotations = cls.__annotations__
 
-    # Sınıfın parametrelerini hazırla
     kwargs = {}
     for field, field_type in annotations.items():
         if field in data:
-            # Eğer alanın tipi bir sınıfsa ve veri bir sözlükse, recursive olarak dönüştür
             if inspect.isclass(field_type) and isinstance(data[field], dict):
                 kwargs[field] = convert_to_class_instance(field_type, data[field])
-            # Eğer alanın tipi bir liste ise ve elemanlar sınıf tipindeyse, liste elemanlarını dönüştür
-            elif get_origin(field_type) == list:  # typing.List gibi türler için
-                item_type = get_args(field_type)[0]  # Listenin içindeki türü al
+            elif get_origin(field_type) == list:
+                item_type = get_args(field_type)[0]
                 if inspect.isclass(item_type) and isinstance(data[field], list):
                     kwargs[field] = [convert_to_class_instance(item_type, item) for item in data[field]]
             else:
-                # Diğer durumlarda doğrudan ata
                 kwargs[field] = data[field]
     
-    # Sınıfın bir örneğini oluştur ve döndür
     return cls(**kwargs)

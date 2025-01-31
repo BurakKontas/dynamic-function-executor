@@ -1,0 +1,38 @@
+{
+  "siparis_no": 12345,
+  "musteri": {
+    "isim": "Ahmet Yılmaz",
+    "yas": 35,
+    "adres": {
+      "sehir": "İstanbul",
+      "ulke": "Türkiye",
+      "posta_kodu": 34000
+    }
+  },
+  "urunler": [
+    {
+      "urun_adi": "Laptop",
+      "fiyat": 3000.0,
+      "uretici": {
+        "sirket_adi": "Teknoloji A.Ş.",
+        "calisanlar": [
+          {
+            "isim": "Mehmet Kaan",
+            "yas": 28,
+            "adres": {
+              "sehir": "İstanbul",
+              "ulke": "Türkiye",
+              "posta_kodu": 34000
+            }
+          }
+        ],
+        "merkez": {
+          "sehir": "İstanbul",
+          "ulke": "Türkiye",
+          "posta_kodu": 34000
+        }
+      }
+    }
+  ],
+  "toplam_tutar": 3000.0
+}

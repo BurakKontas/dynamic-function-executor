@@ -5,7 +5,7 @@ QMainWindow, QWidget {
 }
 
 /* Ana widget arkaplan */
-QWidget#centralWidget {
+QWidget#centralWidget QWidget {
     background-color: #333;
 }
 
@@ -172,4 +172,28 @@ QToolTip {
     color: #fff;
     border: 1px solid #444;
     padding: 4px;
+}
+
+/* QTabWidget ve QTabBar */
+QTabWidget::pane {
+    border: 1px solid #444;
+    background: #222;
+}
+
+QTabBar::tab {
+    background: #444;
+    color: white;
+    padding: 8px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    min-width: 100px;
+}
+
+QTabBar::tab:selected {
+    background: #888;
+    font-weight: bold;
+}
+
+QTabBar::tab:hover {
+    background: #999;
 }

@@ -251,19 +251,19 @@ class MainWindow(QMainWindow):
         # Settings button
         settings_button = QPushButton("Settings")
         settings_button.clicked.connect(self.open_settings_window)
-        settings_button.setFixedSize(120, 35)
+        settings_button.setMinimumWidth(120)
         button_layout.addWidget(settings_button)
 
         # Reload button
         reload_button = QPushButton("Reload")
         reload_button.clicked.connect(self.reload)
-        reload_button.setFixedSize(120, 35)
+        reload_button.setMinimumWidth(120)
         button_layout.addWidget(reload_button)
 
         # Logs button to open logs screen
         logs_button = QPushButton("Open Logs")
         logs_button.clicked.connect(self.open_logs_window)
-        logs_button.setFixedSize(120, 35)
+        logs_button.setMinimumWidth(120)
         button_layout.addWidget(logs_button)
 
         button_layout.addStretch()

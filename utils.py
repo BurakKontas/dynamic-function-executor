@@ -1,6 +1,9 @@
 import builtins
+import datetime
+import inspect
+import json
 import traceback
-from typing import Callable, get_type_hints
+from typing import Callable, Literal, get_args, get_origin, get_type_hints
 from inspect import signature, isclass, isfunction
 import os
 import importlib
@@ -97,15 +100,49 @@ def get_all_functions(functions_folder='functions'):
     return all_functions
 
 
-def print(*args, **kwargs):
+# Severity seviyeleri için renkler
+severity_colors = {
+    'INFO': '\033[34m',  # Mavi
+    'WARNING': '\033[33m',  # Sarı
+    'ERROR': '\033[31m',  # Kırmızı
+    'DEBUG': '\033[32m',  # Yeşil
+    'RESET': '\033[0m',  # Renk sıfırlama
+    'CRITICAL': '\033[41m'  # Kırmızı arka plan
+}
+
+
+def print(*args, severity: str = "INFO", **kwargs):
     stack = traceback.extract_stack()
     filename, lineno, _, _ = stack[-2]
-    
-    builtins.print(f"Print called from {filename}, line {lineno}: ", *args, **kwargs)
 
+    # Log folder from settings, default is "logs"
+    log_folder = "logs"
+    log_folder = load_settings(key="logs", default_value=log_folder)
 
-import inspect
-from typing import get_origin, get_args
+    # Create the log folder if it doesn't exist
+    if not os.path.exists(log_folder):
+        os.makedirs(log_folder)
+
+    # Prepare the timestamp and log file name
+    timestamp = datetime.datetime.now().strftime("%d-%m-%Y_%H")
+    log_filename = os.path.join(log_folder, f"logs_{timestamp}.txt")
+
+    # Get relative filename
+    relative_filename = os.path.relpath(filename)
+
+    # Construct the log message
+    message = f"[{severity}] [{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] " \
+        f"{relative_filename} -> line {lineno}: " + " ".join(map(str, args))
+
+    # Print the message in the console with color based on severity
+    # Default to INFO color if not found
+    color = severity_colors.get(severity, severity_colors['INFO'])
+    builtins.print(f"{color}{message}{severity_colors['RESET']}", **kwargs)
+
+    # Write the message to the log file
+    with open(log_filename, "a", encoding="utf-8") as log_file:
+        log_file.write(message + "\n")
+        log_file.flush()
 
 def convert_to_class_instance(cls, data):
     annotations = cls.__annotations__
@@ -135,3 +172,22 @@ def convert_to_serializable(obj):
         return obj.to_dict()
     else:
         return obj
+    
+
+def load_settings(key=None, default_value=None, path="settings.json", ):
+    if not os.path.exists(path):
+        default_settings = {
+            "functions_path": "examples",  # Default value
+            "css_path": "style.css",      # Default value
+            "log_folder": "logs"          # Default value
+        }
+        with open(path, "w") as file:
+            json.dump(default_settings, file, indent=4)
+        print("Settings file created with default values.")
+
+    # Load the settings from the file
+    with open(path, "r") as file:
+        settings = json.load(file)
+
+    # Return the entire settings dictionary or a specific key if provided
+    return settings.get(key, default_value) if key else settings

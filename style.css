@@ -1,0 +1,175 @@
+QMainWindow, QWidget {
+    background-color: #333;
+    color: #fff;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+/* Ana widget arkaplan */
+QWidget#centralWidget {
+    background-color: #333;
+}
+
+/* Butonlar */
+QPushButton {
+    background-color: #444;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 100px;
+    margin: 4px;
+}
+
+QPushButton:hover {
+    background-color: #555;
+}
+
+QPushButton:pressed {
+    background-color: #666;
+}
+
+QPushButton:disabled {
+    background-color: #2a2a2a;
+    color: #666;
+}
+
+/* Metin kutuları */
+QLineEdit, QTextEdit {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 8px;
+    color: #fff;
+    selection-background-color: #444;
+}
+
+QLineEdit:focus, QTextEdit:focus {
+    border: 1px solid #555;
+    background-color: #2c2c2c;
+}
+
+/* Etiketler */
+QLabel {
+    color: #ddd;
+    font-size: 14px;
+}
+
+/* Kaydırma çubuğu */
+QScrollBar:vertical {
+    background-color: #2a2a2a;
+    width: 10px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #444;
+    min-height: 20px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #555;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+/* Liste görünümü */
+QListView {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 4px;
+    outline: none;
+}
+
+QListView::item {
+    color: #fff;
+    padding: 4px;
+    border-radius: 2px;
+}
+
+QListView::item:selected {
+    background-color: #444;
+}
+
+QListView::item:hover {
+    background-color: #3a3a3a;
+}
+
+/* Grup kutusu */
+QGroupBox {
+    border: 1px solid #444;
+    border-radius: 6px;
+    margin-top: 12px;
+    padding-top: 12px;
+    background-color: #2a2a2a;
+    color: #fff;
+}
+
+QGroupBox::title {
+    color: #fff;
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+}
+
+/* Combobox */
+QComboBox {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 4px 8px;
+    color: #fff;
+    min-height: 24px;
+}
+
+QComboBox::drop-down {
+    border: none;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #fff;
+    width: 0;
+    height: 0;
+    margin-right: 8px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    selection-background-color: #444;
+    selection-color: #fff;
+    color: #fff;
+}
+
+/* Menu */
+QMenu {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    padding: 4px;
+}
+
+QMenu::item {
+    padding: 4px 20px;
+    color: #fff;
+}
+
+QMenu::item:selected {
+    background-color: #444;
+}
+
+/* Tooltip */
+QToolTip {
+    background-color: #2a2a2a;
+    color: #fff;
+    border: 1px solid #444;
+    padding: 4px;
+}

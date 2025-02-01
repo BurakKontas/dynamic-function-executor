@@ -3,6 +3,9 @@ import inspect
 import json
 import os
 import traceback
+import re
+
+from entities import DynamicFunction
 from logs import LogsScreen
 from settings import SettingsWindow
 from utils import convert_to_serializable, get_all_functions, load_settings, print
@@ -81,14 +84,23 @@ class DynamicFunctionUI(QWidget):
         self.refresh_tabs()
 
 
-    def add_function_tab(self, func):
+    def add_function_tab(self, dynamic_function: DynamicFunction):
+        if not dynamic_function.settings.enabled:
+            return
+
         tab = QWidget()
         form_layout = QFormLayout()
 
+        func = dynamic_function.func
+        settings = dynamic_function.settings
         sig = inspect.signature(func)
         param_inputs = {}
 
-        QToolTip.setFont(QFont('Arial', 10))
+        # Add settings information to the tab header
+        if settings.description:
+            tab_header = QLabel(f"Description: {settings.description}")
+            tab_header.setStyleSheet("font-weight: bold;")
+            form_layout.addRow(tab_header)
 
         for param_name, param in sig.parameters.items():
             input_field = None
@@ -112,9 +124,9 @@ class DynamicFunctionUI(QWidget):
                 hbox.addWidget(input_field)
                 hbox.addWidget(file_button)
 
-                label = HoverLabel(f"{param_name} ({
-                                param.annotation.__name__ if param.annotation != param.empty else 'Any'})", '')
+                label = HoverLabel(f"{param_name} ({param.annotation.__name__ if param.annotation != param.empty else 'Any'})", '')
                 form_layout.addRow(label, hbox)
+
             else:
                 if param_type in [dict, list, tuple, set] or (hasattr(param_type, '__name__') and param_type not in {int, str, float, bool}):
                     input_field = QTextEdit()
@@ -122,8 +134,7 @@ class DynamicFunctionUI(QWidget):
                 else:
                     input_field = QLineEdit()
 
-                label = HoverLabel(f"{param_name} ({
-                                param.annotation.__name__ if param.annotation != param.empty else 'Any'})", '')
+                label = HoverLabel(f"{param_name} ({param.annotation.__name__ if param.annotation != param.empty else 'Any'})", '')
                 form_layout.addRow(label, input_field)
 
             # Handle additional types for class instances
@@ -147,7 +158,7 @@ class DynamicFunctionUI(QWidget):
         form_layout.addRow(result_field)
 
         tab.setLayout(form_layout)
-        self.tabs.addTab(tab, func.__name__)
+        self.tabs.addTab(tab, dynamic_function.settings.name)
 
         # Printing the parameter names and the widget values
         param_values = {}
@@ -158,17 +169,14 @@ class DynamicFunctionUI(QWidget):
                 # Just use the type name (e.g., 'int', 'str', etc.)
                 description = param_type.__name__
             else:  # Non-primitive types (likely class instances)
-                description = constructor_parameter_analyzer(
-                    param_type) if param_type else ""
+                description = constructor_parameter_analyzer(param_type) if param_type else ""
 
             param_values[param_name] = {
                 'description': description
             }
 
         # Now print the function name with the parameters and their descriptions
-        print(f"Added tab for function: {func.__name__} with parameters: {
-            param_values}", severity="DEBUG")
-
+        print(f"Added tab for function: {func.__name__} with parameters: {param_values} and settings: {settings.to_dict()}", severity="DEBUG")
 
 
 
@@ -227,7 +235,8 @@ class DynamicFunctionUI(QWidget):
                 f"<pre><strong>{formatted_result}</strong></pre>")
             
             # print(f"Function '{func.__name__}' executed with parameters: {params}", severity="DEBUG") # Commented out to reduce log verbosity
-            print(f"Result: {formatted_result}", severity="DEBUG")
+            cleaned_data = re.sub(r'\s+', ' ', formatted_result).strip()
+            print(f"Result: {cleaned_data}", severity="DEBUG")
 
         except Exception as e:
             result_label.setText(f"Error: {str(e)}")
@@ -242,6 +251,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Dynamic Function Executor")
         self.setGeometry(100, 100, 800, 600)
+        self.setFont(QFont("Roboto", 10))
 
         main_widget = QWidget()
         self.setCentralWidget(main_widget)

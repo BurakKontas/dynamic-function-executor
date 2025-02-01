@@ -3,11 +3,13 @@ import datetime
 import inspect
 import json
 import traceback
-from typing import Callable, Literal, get_args, get_origin, get_type_hints
+from typing import Callable, List, Literal, get_args, get_origin, get_type_hints
 from inspect import signature, isclass, isfunction
 import os
 import importlib
 import sys
+
+from entities import DynamicFunction, DynamicSettings
 
 PRIMAL_TYPES = {int, str, float, bool, list, dict, tuple, set}
 
@@ -60,19 +62,19 @@ def print_function_parameters(funk: Callable) -> None:
             print(f"Parameter: {param_name}, Type: {getattr(param_type, '__name__', param_type)}")
 
 
-def get_all_functions(functions_folder='functions'):
+def get_all_functions(functions_folder='functions') -> List[DynamicFunction]:
     all_functions = []
 
     # Eğer tam bir yol verilmişse, dizini sys.path'a ekle
     if not os.path.exists(functions_folder):
-        print(f"Folder {functions_folder} does not exist.")
+        print(f"Folder {functions_folder} does not exist.", severity="WARNING")
         return all_functions
 
     # Eğer 'functions_folder' bir tam dosya yolu ise, uygun şekilde işle
     if os.path.isdir(functions_folder):
         folder_path = functions_folder
     else:
-        print(f"{functions_folder} is not a valid directory.")
+        print(f"{functions_folder} is not a valid directory.", severity="WARNING")
         return all_functions
 
     sys.path.append(folder_path)
@@ -81,21 +83,42 @@ def get_all_functions(functions_folder='functions'):
         if filename.endswith('.py'):
             module_name = filename[:-3]
 
+            # Modülü temizleyip yeniden yükleyelim
             if module_name in sys.modules:
                 del sys.modules[module_name]
-                print(f"Cleared cache for module: {module_name}")
 
             try:
                 module = importlib.import_module(module_name)
                 importlib.reload(module)
 
-                if hasattr(module, module_name):
-                    func = getattr(module, module_name)
-                    if isfunction(func):
-                        all_functions.append(func)
-                        print(f"Found function: {module_name} in module {module_name}")
+                for attribute_name in dir(module):
+                    attribute = getattr(module, attribute_name)
+                    if isfunction(attribute):
+                        # Varsayılan settings oluştur
+                        settings = DynamicSettings(
+                            name=attribute.__name__,
+                            enabled=True,
+                            description=None
+                        )
+
+                        # Modülde bir settings dict var mı kontrol et
+                        if hasattr(module, "settings") and isinstance(module.settings, dict):
+                            module_settings = module.settings
+                            settings.name = module_settings.get("name", attribute.__name__)
+                            settings.enabled = module_settings.get("enabled", True)
+                            settings.description = module_settings.get("description", None)
+
+                        # DynamicFunction nesnesi ekle
+                        dynamic_function = DynamicFunction(
+                            func=attribute,
+                            settings=settings
+                        )
+                        all_functions.append(dynamic_function)
+                        print(f"Function {attribute.__name__} imported successfully.", severity="INFO")
+                        print(f"Function {attribute.__name__} settings: {settings}", severity="INFO")
+
             except Exception as e:
-                print(f"Error importing module {module_name}: {e}")
+                print(f"Error importing module {module_name}: {e}", severity="ERROR")
 
     return all_functions
 

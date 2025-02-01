@@ -26,3 +26,9 @@ def xml_duplicate_remover(input_file_path: str, output_file_path: str):
         file.write(new_xml_data)
 
     return f"Yinelenen öğeler kaldırıldı ve dosya '{output_file_path}' olarak kaydedildi."
+
+settings = {
+    "name": "XML Duplicate Remover",
+    "enabled": True,
+    "description": "Removes duplicate items from an XML file.",
+}

@@ -101,3 +101,10 @@ class Siparis:
 
 def siparis_isle(siparis: Siparis, odendi: bool):
     return siparis, odendi
+
+
+# settings = {
+#     "name": "Sipariş İşleme",
+#     "enabled": True,
+#     "description": "Örnek bir sipariş işleme fonksiyonu.",
+# }

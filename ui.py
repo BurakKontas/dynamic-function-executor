@@ -1,3 +1,4 @@
+import sys
 from PyQt6.QtWidgets import QComboBox
 import inspect
 import json
@@ -14,7 +15,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QTabWidget, QFormLayout, QLineEdit, QTextEdit, QPushButton, QLabel, QToolTip, QMainWindow
 )
 from utils import constructor_parameter_analyzer, convert_to_class_instance, print
-from PyQt6.QtGui import QFont, QCursor
+from PyQt6.QtGui import QFont, QCursor, QIcon
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtWidgets import QFileDialog, QHBoxLayout
@@ -186,63 +187,82 @@ class DynamicFunctionUI(QWidget):
         if file_path:
             input_field.setText(file_path)
 
-
+            
     def run_function(self, func, param_inputs, result_label):
         params = {}
         sig = inspect.signature(func)
 
         for param_name, param in sig.parameters.items():
-            # Widget değerini alıyoruz, doğrudan widget objesini yazdırmak yerine
-            value = param_inputs[param_name].toPlainText() if isinstance(param_inputs[param_name], QTextEdit) else (
-                param_inputs[param_name].currentText() if isinstance(
-                    param_inputs[param_name], QComboBox) else param_inputs[param_name].text()
-            )
+            # Widget değerini al
+            if param_name in param_inputs:
+                if isinstance(param_inputs[param_name], QTextEdit):
+                    value = param_inputs[param_name].toPlainText()
+                elif isinstance(param_inputs[param_name], QComboBox):
+                    value = param_inputs[param_name].currentText()
+                else:
+                    value = param_inputs[param_name].text()
+            else:
+                value = None  # Eğer UI'de input yoksa
 
+            # Varsayılan değeri kontrol et
+            if (value is None or value.strip() == "") and param.default is not param.empty:
+                value = param.default  # Kullanıcının girmediği durumda varsayılan değeri kullan
+
+            # Kompleks tipleri işle (class, dict, list vs.)
             if hasattr(param.annotation, '__name__') and param.annotation not in {int, str, float, bool}:
                 try:
-                    param_value = convert_to_class_instance(
-                        param.annotation, json.loads(value))
-                    params[param_name] = param_value
-                except Exception as e:
-                    result_label.setText(f"Error: Failed to convert parameter '{
-                                        param_name}' to {param.annotation.__name__}")
-                    error_message = "".join(
-                        traceback.format_exception(None, e, e.__traceback__))
+                    if value is None or (isinstance(value, str) and not value.strip()):
+                        # Eğer değer boşsa ve default değeri de yoksa hata ver
+                        result_label.setText(f"Error: Empty input for parameter '{param_name}'")
+                        return
+                    
+                    # JSON formatında parse edilmeli
+                    if isinstance(value, str):
+                        value = json.loads(value)
 
+                    param_value = convert_to_class_instance(param.annotation, value)
+                    params[param_name] = param_value
+                except json.JSONDecodeError as e:
+                    result_label.setText(f"Error: Invalid JSON input for parameter '{param_name}'")
+                    print(f"JSONDecodeError: {e}", severity="ERROR")
+                    return
+                except Exception as e:
+                    result_label.setText(f"Error: Failed to convert parameter '{param_name}' to {param.annotation.__name__}")
+                    error_message = "".join(traceback.format_exception(None, e, e.__traceback__))
                     print(error_message, severity="ERROR")
                     return
             else:
+                # Temel veri tiplerini işle (int, float, str, bool)
                 if param.annotation in [int, float]:
                     try:
                         value = param.annotation(value)
                     except ValueError:
-                        result_label.setText("Error: Invalid input type")
+                        result_label.setText(f"Error: Invalid input type for parameter '{param_name}'")
                         return
                 params[param_name] = value
+
         try:
+            # Fonksiyonu çalıştır
             result = func(**params)
             result = convert_to_serializable(result)
 
+            # Sonucu uygun formatta göster
             if isinstance(result, (dict, list, tuple, set)):
-                formatted_result = json.dumps(
-                    result, indent=4, ensure_ascii=False)
+                formatted_result = json.dumps(result, indent=4, ensure_ascii=False)
             elif isinstance(result, str):
                 formatted_result = result
             else:
                 formatted_result = str(result)
 
-            result_label.setText(
-                f"<pre><strong>{formatted_result}</strong></pre>")
-            
-            # print(f"Function '{func.__name__}' executed with parameters: {params}", severity="DEBUG") # Commented out to reduce log verbosity
+            result_label.setText(f"<pre>{formatted_result}</pre>")
+
+            # Loglama (opsiyonel)
             cleaned_data = re.sub(r'\s+', ' ', formatted_result).strip()
             print(f"Result: {cleaned_data}", severity="DEBUG")
 
         except Exception as e:
             result_label.setText(f"Error: {str(e)}")
-            error_message = "".join(
-                traceback.format_exception(None, e, e.__traceback__))
-
+            error_message = "".join(traceback.format_exception(None, e, e.__traceback__))
             print(error_message, severity="ERROR")
 
 
@@ -252,6 +272,9 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Dynamic Function Executor")
         self.setGeometry(100, 100, 800, 600)
         self.setFont(QFont("Roboto", 10))
+
+        icon_path = self.resource_path('icon.ico')
+        self.setWindowIcon(QIcon(icon_path))
 
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
@@ -283,6 +306,20 @@ class MainWindow(QMainWindow):
 
         main_widget.setLayout(layout)
         self.reload()
+
+    def resource_path(self, relative_path):
+        """PyInstaller'ın EXE dosyasındaki veri dosyasını bulmasını sağlar"""
+        try:
+            # Eğer program EXE olarak çalışıyorsa
+            if getattr(sys, 'frozen', False):
+                # PyInstaller tarafından gömülen dosyalar
+                base_path = sys._MEIPASS
+            else:
+                base_path = os.path.abspath(".")
+            return os.path.join(base_path, relative_path)
+        except Exception as e:
+            print(f"Icon yükleme hatası: {e}")
+            return ""
         
     def open_settings_window(self):
         print("Opening settings window...", severity="DEBUG")

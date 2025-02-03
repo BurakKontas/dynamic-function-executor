@@ -168,23 +168,61 @@ def print(*args, severity: str = "INFO", **kwargs):
         log_file.flush()
 
 def convert_to_class_instance(cls, data):
+    if not hasattr(cls, '__annotations__'):  
+        return data  # Eğer cls bir sınıf değilse (örneğin dict ise) direkt geri döndür
+    
     annotations = cls.__annotations__
-
     kwargs = {}
+
     for field, field_type in annotations.items():
-        if field in data:
-            if inspect.isclass(field_type) and isinstance(data[field], dict):
-                kwargs[field] = convert_to_class_instance(field_type, data[field])
-            elif get_origin(field_type) == list:
-                item_type = get_args(field_type)[0]
-                if inspect.isclass(item_type) and isinstance(data[field], list):
-                    kwargs[field] = [convert_to_class_instance(item_type, item) for item in data[field]]
-            elif get_origin(field_type) == tuple:
-                item_types = get_args(field_type)
-                if all(inspect.isclass(item_type) for item_type in item_types) and isinstance(data[field], tuple):
-                    kwargs[field] = tuple(convert_to_class_instance(item_type, item) for item_type, item in zip(item_types, data[field]))
+        origin_type = get_origin(field_type)
+        
+        # Varsayılan değer belirleme
+        if origin_type == list:
+            default_value = []
+        elif origin_type == dict:
+            default_value = {}
+        elif origin_type == tuple:
+            default_value = tuple()
+        elif origin_type == set:
+            default_value = set()
+        else:
+            default_value = None  # Diğer türler için
+
+        field_value = data.get(field, default_value)  # UI’den değer gelmezse varsayılanı kullan
+        
+        # Eğer iç içe geçmiş bir sınıf varsa
+        if inspect.isclass(field_type) and isinstance(field_value, dict):
+            kwargs[field] = convert_to_class_instance(field_type, field_value)
+
+        # Eğer liste (List[T]) ise
+        elif origin_type == list:
+            item_type = get_args(field_type)[0]
+            if inspect.isclass(item_type) and isinstance(field_value, list):
+                kwargs[field] = [convert_to_class_instance(item_type, item) for item in field_value]
             else:
-                kwargs[field] = data[field]
+                kwargs[field] = field_value  # Doğrudan ata
+
+        # Eğer tuple (Tuple[T1, T2, ...]) ise
+        elif origin_type == tuple:
+            item_types = get_args(field_type)
+            if all(inspect.isclass(item_type) for item_type in item_types) and isinstance(field_value, tuple):
+                kwargs[field] = tuple(
+                    convert_to_class_instance(item_type, item) for item_type, item in zip(item_types, field_value)
+                )
+            else:
+                kwargs[field] = field_value  # Doğrudan ata
+
+        # Eğer dict (Dict[K, V]) ise
+        elif origin_type == dict:
+            key_type, value_type = get_args(field_type)
+            if inspect.isclass(value_type) and isinstance(field_value, dict):
+                kwargs[field] = {k: convert_to_class_instance(value_type, v) for k, v in field_value.items()}
+            else:
+                kwargs[field] = field_value  # Doğrudan ata
+        
+        else:
+            kwargs[field] = field_value  # Diğer durumlarda doğrudan ata
     
     return cls(**kwargs)
 

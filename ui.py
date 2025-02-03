@@ -132,6 +132,9 @@ class DynamicFunctionUI(QWidget):
                 if param_type in [dict, list, tuple, set] or (hasattr(param_type, '__name__') and param_type not in {int, str, float, bool}):
                     input_field = QTextEdit()
                     input_field.setFixedHeight(80)
+                elif param_type == str and "multi_line" in param_name.lower():
+                    input_field = QTextEdit()
+                    input_field.setFixedHeight(80)
                 else:
                     input_field = QLineEdit()
 

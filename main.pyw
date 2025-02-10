@@ -14,6 +14,7 @@ def global_exception_handler(exc_type, exc_value, exc_tb):
         sys.exit(1)
     if exc_type is KeyboardInterrupt:
         print("KeyboardInterrupt received. Exiting...", severity="DEBUG")
+        sys.exit(0)
 
 
 if __name__ == "__main__":

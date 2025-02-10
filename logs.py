@@ -12,7 +12,7 @@ severity_colors = {
     'RESET': 'rgba(0, 0, 0, 1)',  # Black (fully opaque)
     # Intense red with 100% opacity for critical
     'CRITICAL': 'rgba(255, 120, 120, 1)',
-    'DEV': 'rgba(128, 0, 128, 1)' 
+    'DEV': 'rgba(255, 0, 255, 1)' 
 }
 
 
@@ -100,6 +100,9 @@ class LogsScreen(QWidget):
             elif '[CRITICAL]' in line:
                 color = severity_colors['CRITICAL']
                 current_severity = 'CRITICAL'
+            elif '[DEV]' in line:
+                color = severity_colors['DEV']
+                current_severity = 'DEV'
             else:
                 # If no severity is found, use the previous line's severity
                 if current_severity:

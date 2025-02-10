@@ -219,7 +219,6 @@ class DynamicFunctionUI(QWidget):
             else:
                 value = None  # Eğer UI'de input yoksa
 
-            print(value, severity="DEV")
             # Varsayılan değeri kontrol et
             if (value is None or (isinstance(value, str) and value.strip() == "")) and param.default is not param.empty:
                 value = param.default  # Kullanıcının girmediği durumda varsayılan değeri kullan

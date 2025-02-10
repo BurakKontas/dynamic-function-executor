@@ -12,6 +12,7 @@ severity_colors = {
     'RESET': 'rgba(0, 0, 0, 1)',  # Black (fully opaque)
     # Intense red with 100% opacity for critical
     'CRITICAL': 'rgba(255, 120, 120, 1)',
+    'DEV': 'rgba(128, 0, 128, 1)' 
 }
 
 

@@ -130,7 +130,8 @@ severity_colors = {
     'ERROR': '\033[31m',  # Kırmızı
     'DEBUG': '\033[32m',  # Yeşil
     'RESET': '\033[0m',  # Renk sıfırlama
-    'CRITICAL': '\033[41m'  # Kırmızı arka plan
+    'CRITICAL': '\033[41m',  # Kırmızı arka plan
+    'DEV': '\033[35m' # Mor
 }
 
 

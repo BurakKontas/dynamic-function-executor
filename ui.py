@@ -1,3 +1,4 @@
+from enum import Enum
 import sys
 from PyQt6.QtWidgets import QComboBox
 import inspect
@@ -115,6 +116,16 @@ class DynamicFunctionUI(QWidget):
                 label = HoverLabel(f"{param_name} ({'bool'})", '')
                 form_layout.addRow(label, input_field)
 
+            elif isinstance(param_type, type) and issubclass(param_type, Enum):
+                input_field = QComboBox()
+                members = []
+                for enum_member in param_type:
+                    input_field.addItem(enum_member.name, enum_member.value)
+                    members.append(enum_member.name)
+                
+                label = HoverLabel(f"{param_name} ({param_type.__name__})", f'{", ".join(members)}')              
+                form_layout.addRow(label, input_field)
+
             elif param_type == str and "file_path" in param_name.lower():
                 input_field = QLineEdit()
                 file_button = QPushButton("Dosya Seç")
@@ -142,9 +153,9 @@ class DynamicFunctionUI(QWidget):
                 form_layout.addRow(label, input_field)
 
             # Handle additional types for class instances
-            if param_type is not None and hasattr(param_type, '__name__') and param_type not in {int, str, float, bool}:
-                tooltip = constructor_parameter_analyzer(param_type)
-                label.tooltip = f"{param_name}: {tooltip}"
+            if param_type is not None and hasattr(param_type, '__name__'):
+                if param_type not in {int, str, float, bool} or (isinstance(param_type, type) and issubclass(param_type, Enum)):
+                    label.tooltip = constructor_parameter_analyzer(param_type)                    
 
             param_inputs[param_name] = input_field
 
@@ -191,6 +202,7 @@ class DynamicFunctionUI(QWidget):
             input_field.setText(file_path)
 
             
+
     def run_function(self, func, param_inputs, result_label):
         params = {}
         sig = inspect.signature(func)
@@ -201,21 +213,37 @@ class DynamicFunctionUI(QWidget):
                 if isinstance(param_inputs[param_name], QTextEdit):
                     value = param_inputs[param_name].toPlainText()
                 elif isinstance(param_inputs[param_name], QComboBox):
-                    value = param_inputs[param_name].currentText()
+                    value = param_inputs[param_name].currentData()
                 else:
                     value = param_inputs[param_name].text()
             else:
                 value = None  # Eğer UI'de input yoksa
 
+            print(value, severity="DEV")
             # Varsayılan değeri kontrol et
-            if (value is None or value.strip() == "") and param.default is not param.empty:
+            if (value is None or (isinstance(value, str) and value.strip() == "")) and param.default is not param.empty:
                 value = param.default  # Kullanıcının girmediği durumda varsayılan değeri kullan
 
-            # Kompleks tipleri işle (class, dict, list vs.)
-            if hasattr(param.annotation, '__name__') and param.annotation not in {int, str, float, bool}:
+            # Enum kontrolü
+            elif hasattr(param.annotation, '__name__') and isinstance(param.annotation, type) and issubclass(param.annotation, Enum):
+                if value is None or value.strip() == "":
+                    if param.default is not param.empty:
+                        value = param.default  # Varsayılan değeri kullan
+                    else:
+                        result_label.setText(f"Error: Empty input for parameter '{param_name}'")
+                        return
                 try:
+                    enum_value = param.annotation[value]
+                    params[param_name] = enum_value
+                except KeyError:
+                    result_label.setText(f"Error: Invalid value for Enum parameter '{param_name}'")
+                    return
+
+            # Kompleks tipleri işle (class, dict, list vs.)
+            elif hasattr(param.annotation, '__name__') and param.annotation not in {int, str, float, bool}:
+                try:
+                    print(f"Converting parameter '{param_name}' to {param.annotation.__name__}", severity="DEBUG")
                     if value is None or (isinstance(value, str) and not value.strip()):
-                        # Eğer değer boşsa ve default değeri de yoksa hata ver
                         result_label.setText(f"Error: Empty input for parameter '{param_name}'")
                         return
                     
